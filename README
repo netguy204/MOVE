@@ -13,7 +13,7 @@ and Operations instead of Models, Views, and Controllers. What's the
 difference? In my understanding (and experience thus far) this
 seperation (like MVC) keep views and models from knowing anything
 about each other. Unlike MVC, it does away with the ambiguous
-"Controller" and instead encourages "Operations" instead. Operations
+"Controller" and encourages "Operations" instead. Operations
 are essentially your high level use-cases in code form.
 
 It's still a cloudy thing in my brain. That's why I'm writing code. I
