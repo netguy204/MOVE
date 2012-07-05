@@ -31,14 +31,19 @@
 (defn test-events []
   (with-test-group "events"
     [a (atom nil)
-     b (atom nil)]
+     b (atom nil)
+     all (atom nil)
+     _ (events/register [] #(reset! all %))]
 
     (assert-false @a)
+    (assert-false @all)
+    
     (assert-true
      (do
        (events/register :foo #(reset! a %))
        (events/fire :foo true)
        @a))
+    (assert-true @all)
     
     (assert-false @b)
 
@@ -47,8 +52,10 @@
        (events/register :bar #(reset! b %))
        (events/fire :bar true)
        @b))
+    (assert-true @all)
 
-    (assert-false (do (events/fire :foo false) @a))))
+    (assert-false (do (events/fire :foo false) @a))
+    (assert-false @all)))
 
 (defn ^:export run []
   (.log js/console "Tests started")

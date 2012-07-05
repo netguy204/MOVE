@@ -6,10 +6,10 @@
      (.error js/console ~(str "FAILED: " (pr-str statement)))))
 
 (defmacro assert-true [statement & msg]
-  `(report-result ~statement '~statement))
+  `(report-result ~statement ~statement))
 
 (defmacro assert-false [statement & msg]
-  `(report-result (not ~statement) '~statement))
+  `(report-result (not ~statement) ~statement))
 
 (defmacro with-test-group [group-name bindings & tests]
   (let [any-fail (gensym)]
