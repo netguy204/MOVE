@@ -2,6 +2,7 @@
   (:require [move.models :as models]
             [move.interactors :as inter]
             [move.views :as views]
+            [move.events :as events]
             [goog.dom :as dom]))
 
 
@@ -15,11 +16,14 @@
         list "Shopping List"]
 
     (models/make-list state list)
+    (models/set-current-list state list)
     (models/add-todo state list "Potatos")
     (models/add-todo state list "Carrots")
     (models/add-todo state list "Peas")
 
     (views/set-items view (models/list-items state list))
-    (views/set-list-name view list)))
+    (views/set-list-name view list)
+
+    (events/register :create-clicked #(inter/create-new-todo state view identity))))
 
 

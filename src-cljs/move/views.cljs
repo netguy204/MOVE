@@ -1,6 +1,9 @@
 (ns move.views
   (:require [goog.ui.tree.TreeControl :as TreeControl]
-            [goog.dom :as dom]))
+            [goog.ui.Button :as Button]
+            [goog.dom :as dom]
+            [goog.events :as ge]
+            [move.events :as events]))
 
 (defn content-view []
   (dom/getElement "content"))
@@ -39,7 +42,7 @@
       (.setClientData subnode item)
       (.add view subnode))))
 
-(defrecord WebTodoView [list]
+(defrecord WebTodoView [list add-button]
   ViewOperations
 
   (set-items [view items]
@@ -50,6 +53,15 @@
     (.setHtml (:list view) (render name))))
 
 (defn make-web-view [el]
-  (let [view (WebTodoView. (make-list-view "[]"))]
-    (.render (:list view) el)
+  (let [list (make-list-view "[]")
+        button (goog/ui.Button. "Create")
+        view (WebTodoView. list button)]
+    (ge/listen button "action" #(events/fire :create-clicked))
+    (.render list el)
+    (.render button el)
     view))
+
+(defn make-noop-view []
+  (reify ViewOperations
+    (set-items [view items] true)
+    (set-list-name [view name] true)))

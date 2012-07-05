@@ -9,7 +9,9 @@
   
   (list-items [state list])
 
-  (current-list [state]))
+  (current-list [state])
+
+  (set-current-list [state list]))
 
 (defn count-items [state name]
   (count (list-items state name)))
@@ -38,8 +40,15 @@
     (get-in @(:state state) [:lists name]))
 
   (current-list [state]
-    (let [current (get-in @(:state state) [:current-list])]
-      (or current (make-list state "default")))))
+    (if-let [current (get-in @(:state state) [:current-list])]
+      current
+      (do
+        (let [current (make-list state "default")]
+          (set-current-list state current)
+          current))))
+
+  (set-current-list [state list]
+    (swap! (:state state) assoc-in [:current-list] list)))
 
 (defn make-web-state []
   (WebApplicationState. (atom {})))
