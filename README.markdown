@@ -1,4 +1,5 @@
 MOVE
+====
 
 This is an attempt to put-to-code some of the concepts described in:
 
@@ -38,7 +39,8 @@ global too. That's convenient. Hasn't bitten me yet though I'm wary.
 For testing, I can mock out my monolithic view and fire those high
 level events myself. make-noop-view does just that.
 
-# License
+License
+-------
 
 Copyright (C) 2012 Brian Taylor
 
