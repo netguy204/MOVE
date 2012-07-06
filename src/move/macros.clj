@@ -39,12 +39,12 @@ asynchronous calls.
   the binding will only be established once the callback fires and it
   will take on the value that was given to the callback.
 
-  The dosync form does not return a meaningful value because of its
+  The doasync form does not return a meaningful value because of its
   asynchronous execution behavior.
 
   For example:
 
-  (dosync
+  (doasync
     [name [get-json \"/name.json\"]
      profile-target (str name \".html\")
      profile [get-json profile-target]
@@ -56,7 +56,7 @@ asynchronous calls.
   (defn get-json [url callback] ...)
 
   When get-json calls its callback with the data, that data is boiund
-  to name and the next binding in dosync is allowed to execute. Since
+  to name and the next binding in doasync is allowed to execute. Since
   the RHS of this form is not a vector, it executes immediately to
   create the binding on the RHS. Next, another get-json request fires
   asynchronously with the computed url. Finally, we synchronously tell
