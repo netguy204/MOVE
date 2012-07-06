@@ -15,15 +15,7 @@
         state (models/make-web-state)
         list "Shopping List"]
 
-    (models/make-list state list)
-    (models/set-current-list state list)
-    (models/add-todo state list "Potatos")
-    (models/add-todo state list "Carrots")
-    (models/add-todo state list "Peas")
-
-    (views/set-items view (models/list-items state list))
-    (views/set-list-name view list)
-
-    (events/register :create-clicked #(inter/create-new-todo state view identity))))
+    ;; start the application
+    (inter/run-application state view identity)))
 
 
