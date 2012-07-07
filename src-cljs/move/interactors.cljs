@@ -19,27 +19,27 @@
 
 (defasync get-current-list [state]
   "[async] get the current list from the server and update the model"
-  [current-list [get-json "/resources/current-list.json"]
-   _ (models/set-current-list state current-list)]
+  [current-list [get-json "/resources/current-list.json"]]
   
+  (models/set-current-list state current-list)
   current-list)
 
 (defasync get-list-data [state current-list]
   "[async] get the items in a list from the server and update the model"
-  [list-items [get-json "/resources/list-items.json"]
-   _ (doseq [item list-items]
-       (models/add-todo state current-list item))]
+  [list-items [get-json "/resources/list-items.json"]]
 
+  (doseq [item list-items]
+    (models/add-todo state current-list item))
+  
   list-items)
 
 (defasync create-new-todo [state view]
   "[async] create a new item in the current list"
   [list (models/current-list state)
-   input-dialog (views/make-input-dialog "Todo name?")
-   input [events/register-once [:ok-clicked input-dialog]]
-   item (models/add-todo state list input)]
+   input-dialog (views/make-input-dialog "What do you want to do?")
+   input [views/with-input input-dialog]]
 
-  item)
+  (models/add-todo state list input))
 
 (defasync run-application [state view]
   "[async] start the application"

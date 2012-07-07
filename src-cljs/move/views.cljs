@@ -104,7 +104,11 @@
     (.setVisible dialog true)
     (.focusAndSelect input)
     
-    (ge/listen dialog (.-SELECT goog/ui.Dialog.EventType)
-               #(events/fire [:ok-clicked dialog] (.getValue input)))
+    (ge/listenOnce dialog (.-SELECT goog/ui.Dialog.EventType)
+               #(when (= (.-key %) (.-OK goog/ui.Dialog.DefaultButtonKeys))
+                  (events/fire [:ok-clicked dialog] (.getValue input))))
     
     dialog))
+
+(defn with-input [view callback]
+  (events/register-once [:ok-clicked view] callback))
