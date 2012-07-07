@@ -18,6 +18,14 @@
          (fn [bindings]
            (remove #(identical? binding %) bindings))))
 
+(defn register-once [event callback & curried]
+  (let [binding (atom nil)
+        new-callback (fn [& args]
+                       (unregister event @binding)
+                       (apply callback args))]
+    (reset! binding (apply register event new-callback curried))
+    @binding))
+
 (defn fire [event & args]
   "event is either a single value or a sequence."
   (binding [*current-event* event]

@@ -1,6 +1,8 @@
 (ns move.views
   (:require [goog.ui.tree.TreeControl :as TreeControl]
             [goog.ui.Button :as Button]
+            [goog.ui.Dialog :as Dialog]
+            [goog.ui.LabelInput :as LabelInput]
             [goog.dom :as dom]
             [goog.events :as ge]
             [move.events :as events]))
@@ -92,3 +94,17 @@
     (append-item [view item] true)
     (clear-items [view] true)
     (set-name [view name] true)))
+
+
+(defn make-input-dialog [message]
+  (let [dialog (goog/ui.Dialog.)
+        input (goog/ui.LabelInput. "type here")]
+    (.setTitle dialog message)
+    (.addChild dialog input true)
+    (.setVisible dialog true)
+    (.focusAndSelect input)
+    
+    (ge/listen dialog (.-SELECT goog/ui.Dialog.EventType)
+               #(events/fire [:ok-clicked dialog] (.getValue input)))
+    
+    dialog))

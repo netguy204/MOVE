@@ -23,7 +23,7 @@
     [content (dom/getElement "content")
      view (views/make-web-view content)
      _ (views/set-items view ["one" "two" "three"])
-     _ (views/set-list-name view "sizzle")]
+     _ (views/set-name view "sizzle")]
     
     (assert-true (= 3 (count (.getChildren (:list view)))))
     (assert-true (= "sizzle" (.getText (:list view))))))

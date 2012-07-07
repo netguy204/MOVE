@@ -35,7 +35,9 @@
 (defasync create-new-todo [state view]
   "[async] create a new item in the current list"
   [list (models/current-list state)
-   item (models/add-todo state list "EMPTY")]
+   input-dialog (views/make-input-dialog "Todo name?")
+   input [events/register-once [:ok-clicked input-dialog]]
+   item (models/add-todo state list input)]
 
   item)
 
