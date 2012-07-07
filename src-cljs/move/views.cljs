@@ -30,7 +30,11 @@
 (defprotocol ViewOperations
   (set-items [view items])
 
-  (set-list-name [view name]))
+  (append-item [view item])
+
+  (clear-items [view])
+  
+  (set-name [view name]))
 
 (defn- make-list-view [name]
   (let [config goog/ui.tree.TreeControl.defaultConfig]
@@ -40,20 +44,32 @@
   (doseq [child (.getChildren view)]
     (.removeChild view child)))
 
-(defn- extend-list-view [view items]
+(defn- append-list-item [view item]
+  (let [subnode (.createNode view (render item))]
+    (.setClientData subnode item)
+    (.add view subnode)))
+
+(defn- extend-list-items [view items]
   (doseq [item items]
-    (let [subnode (.createNode view (render item))]
-      (.setClientData subnode item)
-      (.add view subnode))))
+    (append-list-item view item)))
+
+(defn- get-list-name [view]
+  (.getHtml (:list view)))
 
 (defrecord WebTodoView [list add-button]
   ViewOperations
 
   (set-items [view items]
     (clear-list-view (:list view))
-    (extend-list-view (:list view) items))
+    (extend-list-items (:list view) items))
 
-  (set-list-name [view name]
+  (append-item [view item]
+    (append-list-item (:list view) item))
+
+  (clear-items [view]
+    (clear-list-view (:list view)))
+  
+  (set-name [view name]
     (.setHtml (:list view) (render name))))
 
 (defn make-web-view [el]
@@ -66,9 +82,13 @@
     
     (.render list el)
     (.render create-button el)
+    (.render clear-button el)
+
     view))
 
 (defn make-noop-view []
   (reify ViewOperations
     (set-items [view items] true)
-    (set-list-name [view name] true)))
+    (append-item [view item] true)
+    (clear-items [view] true)
+    (set-name [view name] true)))

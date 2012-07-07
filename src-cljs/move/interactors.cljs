@@ -36,19 +36,35 @@
   "[async] create a new item in the current list"
   [list (models/current-list state)
    item (models/add-todo state list "EMPTY")]
-  
-  (views/set-items view (models/list-items state list))
+
   item)
 
 (defasync run-application [state view]
   "[async] start the application"
   [current-list [get-current-list state]
-   _ (views/set-list-name view current-list)
    list-items [get-list-data state current-list]]
 
-  (views/set-items view list-items)      
+  ;; fill the view with our initial data
+  (views/set-name view current-list)
+  (views/set-items view list-items)
+
+  ;; establish event bindings to keep the view current
+  (events/register [:change-current-list]
+                   (fn [name]
+                     (views/set-name view name)
+                     (views/set-items view (models/list-items state name))))
+
+  (events/register [:add-item] #(views/append-item view %))
+
+  ;; listen for events from the view too
   (events/register :create-clicked
-                   #(create-new-todo state view identity)))
+                   #(create-new-todo state view identity))
+
+  (events/register :clear-clicked
+                   #(let [current-list (models/current-list state)]
+                      (doseq [item (models/list-items state current-list)]
+                        (models/remove-todo state current-list item))
+                      (views/clear-items view))))
 
 (comment
 

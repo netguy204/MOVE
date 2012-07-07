@@ -1,9 +1,12 @@
-(ns move.models)
+(ns move.models
+  (:require [move.events :as events]))
 
 (defprotocol DataModelOperations
   (make-list [state name])
 
   (add-todo [state list value])
+
+  (remove-todo [state list value])
 
   (all-lists [state])
   
@@ -31,7 +34,13 @@
   (add-todo [state name value]
     (swap! (:state state)
            update-in [:lists name]
-           conj value))
+           conj value)
+    (events/fire [:add-item name] value))
+
+  (remove-todo [state name value]
+    (swap! (:state state)
+           update-in [:lists name]
+           (fn [items] (remove #(identical? value %) items))))
 
   (all-lists [state]
     (keys (get-in @(:state state) [:lists])))
@@ -48,7 +57,8 @@
           current))))
 
   (set-current-list [state list]
-    (swap! (:state state) assoc-in [:current-list] list)))
+    (swap! (:state state) assoc-in [:current-list] list)
+    (events/fire [:change-current-list] list)))
 
 (defn make-web-state []
   (WebApplicationState. (atom {})))
