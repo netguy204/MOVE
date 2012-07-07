@@ -73,3 +73,34 @@ asynchronous calls.
           ~next)))
    'identity
    (reverse (partition 2 bindings))))
+
+(defmacro defasync [name parms & doc-bindings-body]
+  "Defines a new asynchronous function suitable for use in
+  asynchronous invocations elsewhere. Our convention is that
+  asynchronous functions always take a callback in their final
+  argument position. This macro inserts that callback argument
+  automatically. After the function parameters, asynchronous bindings
+  can be established as described in doasync. The body of the function
+  will be evaluated after all of the asynchronous bindings have been
+  established and the result of the body will be passed as the result
+  to the implicitely created callback argument.
+
+  Example:
+
+  (defasync get-json [url]
+    [event [xhr/send url]]
+
+    (json/unsafeParse (ev->str event)))
+
+"
+  (let [[doc remaining] (if (string? (first doc-bindings-body))
+                     [(first doc-bindings-body) (rest doc-bindings-body)]
+                     ["" doc-bindings-body])
+        bindings (first remaining)
+        body (rest remaining)]
+    `(defn ~name [~@parms nextfn#]
+       ~doc
+       (doasync
+        [~@bindings
+         result# (do ~@body)
+         junk# (nextfn# result#)]))))

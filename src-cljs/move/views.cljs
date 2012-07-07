@@ -23,6 +23,10 @@
   Renderable
   (render [item] (name item)))
 
+(extend-type default
+  cljs.core.IHash
+  (-hash [o] (goog/getUid o)))
+
 (defprotocol ViewOperations
   (set-items [view items])
 
@@ -54,11 +58,14 @@
 
 (defn make-web-view [el]
   (let [list (make-list-view "[]")
-        button (goog/ui.Button. "Create")
-        view (WebTodoView. list button)]
-    (ge/listen button "action" #(events/fire :create-clicked))
+        create-button (goog/ui.Button. "Create")
+        clear-button (goog/ui.Button. "Clear")
+        view (WebTodoView. list create-button)]
+    (ge/listen create-button "action" #(events/fire [:create-clicked view]))
+    (ge/listen clear-button "action" #(events/fire [:clear-clicked view]))
+    
     (.render list el)
-    (.render button el)
+    (.render create-button el)
     view))
 
 (defn make-noop-view []
