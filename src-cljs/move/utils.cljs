@@ -6,3 +6,5 @@
 
 (defn index-of [coll value]
   (first (indices-of coll value)))
+
+

@@ -94,7 +94,7 @@
                  update-in [:lists list]
                  insert datum pos)
           (doseq [m (list-markers state list)]
-            (when (>= (position m) pos)
+            (when (> (position m) pos)
               (update-marker m inc)))))
       
       (events/fire [:add-item list] datum)

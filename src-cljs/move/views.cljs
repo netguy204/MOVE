@@ -3,10 +3,15 @@
             [goog.ui.Button :as Button]
             [goog.ui.Dialog :as Dialog]
             [goog.ui.LabelInput :as LabelInput]
+            [goog.ui.tree.BaseNode :as BaseNode]
             [goog.dom :as dom]
             [goog.events :as ge]
+            [goog.Timer :as Timer]
             [move.events :as events]
-            [move.utils :as utils]))
+            [move.utils :as utils])
+
+  (:use-macros [move.macros :only [goog-extend]]
+               [cljs.core :only [this-as]]))
 
 (defn content-view []
   (dom/getElement "content"))
@@ -18,10 +23,6 @@
 (defprotocol ViewOperations
   (set-state [view view-state])
   (with-dialog-input [view message default callback]))
-
-(defn- make-list-view [name]
-  (let [config goog/ui.tree.TreeControl.defaultConfig]
-    (goog/ui.tree.TreeControl. name config)))
 
 (defn- get-children [view]
   (or (.getChildren view) nil))
@@ -49,6 +50,27 @@
 (defn- set-selected-index [view idx]
   (let [entry (nth (get-children view) idx)]
     (.setSelectedItem view entry)))
+
+(goog-extend
+ MyTree goog/ui.tree.TreeControl
+ ([name config]
+    (this-as this
+      (goog/base this name config)))
+
+ (handleKeyEvent
+  [e]
+  (this-as this
+    (goog/base this "handleKeyEvent" e)
+    (let [view (.-hiddenView this)]
+      (when (#{(.-ENTER goog/events.KeyCodes)
+               (.-MAC_ENTER goog/events.KeyCodes)} (.-keyCode e))
+        (events/fire [:edit view] (get-selected-index this))
+        (.preventDefault e))))))
+
+(defn- make-list-view [name]
+  (let [config goog/ui.tree.TreeControl.defaultConfig
+        tree (MyTree. name config)]
+    tree))
 
 ;; view state
 ;;
@@ -82,7 +104,7 @@
   (let [dialog (make-input-dialog message default)]
     (with-value dialog callback)))
 
-(defrecord WebTodoView [list state]
+(defrecord WebTodoView [list]
   ViewOperations
   (set-state [view new-state]
     (clear-list-view (:list view))
@@ -92,7 +114,10 @@
       (set-selected-index (:list view) (:selected new-state))))
 
   (with-dialog-input [view message default callback]
-    (with-web-dialog-input message default callback)))
+    (with-web-dialog-input message default
+      (fn [& results]
+        (apply callback results)
+        (.. (:list view) (getElement) (focus))))))
 
 (defn make-web-view [el]
   (let [list (make-list-view "[]")
@@ -100,6 +125,7 @@
         clear-button (goog/ui.Button. "Clear")
         view (WebTodoView. list)]
 
+    (set! (.-hiddenView list) view)
     (.render list el)
     (.render create-button el)
     (.render clear-button el)
@@ -108,7 +134,7 @@
     (ge/listen clear-button "action" #(events/fire [:clear view]))
     (ge/listen (.getElement list) (.-DBLCLICK goog/events.EventType)
                #(events/fire [:edit view] (get-selected-index list)))
-    (ge/listen (.getElement list) (.-CLICK goog/events.EventType)
+    (ge/listen list (.-CHANGE goog/events.EventType)
                #(events/fire [:select view] (get-selected-index list)))
     
     view))
@@ -119,5 +145,3 @@
 
     (with-dialog-input [view message default callback]
       (callback test-input))))
-
-
