@@ -108,7 +108,7 @@
                                      (value-key %))
                                  items)))
       (doseq [m (list-markers state list)]
-        (when (>= (position m) idx)
+        (when (> (position m) idx)
           (update-marker m dec)))
 
       (events/fire [:remove-item list] todo)

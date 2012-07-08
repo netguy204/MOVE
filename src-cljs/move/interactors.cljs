@@ -52,18 +52,29 @@
         make-view-state
         #(let [current-list (models/current-list state)
                list-items (models/list-items state current-list)]
-           {:selected @selected-item
+           {:selected (and @selected-item (models/position @selected-item))
             :list-name (models/value current-list)
             :items (map models/value list-items)})
         sync #(views/set-state view (make-view-state))]
     
     ;; establish event bindings to keep the view current
-    (events/register [:change-current-list] sync)
+    (events/register [:change-current-list]
+                     (fn [list]
+                       (when @selected-item
+                         (models/remove-marker state list @selected-item)
+                         (reset! selected-item nil))
+                       (sync)))
+    
     (events/register [:add-item] sync)
     (events/register [:remove-item] sync)
 
     ;; prevent visual jarring by tracking the selected state locally
-    (events/register [:select view] #(reset! selected-item %))
+    (events/register [:select view]
+                     #(if @selected-item
+                        (models/move @selected-item %)
+                        (let [m (models/make-marker %)]
+                          (reset! selected-item m)
+                          (models/add-marker state (models/current-list state) m))))
 
     ;; do the initial sync
     (sync)
