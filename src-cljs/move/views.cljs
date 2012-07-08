@@ -5,49 +5,33 @@
             [goog.ui.LabelInput :as LabelInput]
             [goog.dom :as dom]
             [goog.events :as ge]
-            [move.events :as events]))
+            [move.events :as events]
+            [move.utils :as utils]))
 
 (defn content-view []
   (dom/getElement "content"))
 
-;; something that knows how to turn itself into HTML
-(defprotocol Renderable
-  (render [item]))
-
-;; strings become HTML directly
-(extend-type string
-
-  Renderable
-  (render [item] item))
-
-(extend-type cljs.core.keyword
-
-  Renderable
-  (render [item] (name item)))
-
 (extend-type default
-  cljs.core.IHash
+  IHash
   (-hash [o] (goog/getUid o)))
 
 (defprotocol ViewOperations
-  (set-items [view items])
-
-  (append-item [view item])
-
-  (clear-items [view])
-  
-  (set-name [view name]))
+  (set-state [view view-state])
+  (with-dialog-input [view message default callback]))
 
 (defn- make-list-view [name]
   (let [config goog/ui.tree.TreeControl.defaultConfig]
     (goog/ui.tree.TreeControl. name config)))
 
+(defn- get-children [view]
+  (or (.getChildren view) nil))
+
 (defn- clear-list-view [view]
-  (doseq [child (.getChildren view)]
+  (doseq [child (get-children view)]
     (.removeChild view child)))
 
 (defn- append-list-item [view item]
-  (let [subnode (.createNode view (render item))]
+  (let [subnode (.createNode view item)]
     (.setClientData subnode item)
     (.add view subnode)))
 
@@ -55,60 +39,85 @@
   (doseq [item items]
     (append-list-item view item)))
 
-(defn- get-list-name [view]
-  (.getHtml (:list view)))
+(defn- set-list-name [view name]
+  (.setHtml view name))
 
-(defrecord WebTodoView [list add-button]
+(defn- get-selected-index [view]
+  (let [entry (.getSelectedItem view)]
+    (utils/index-of (get-children view) (.getSelectedItem view))))
+
+(defn- set-selected-index [view idx]
+  (let [entry (nth (get-children view) idx)]
+    (.setSelectedItem view entry)))
+
+;; view state
+;;
+;; {:selected 3
+;;  :list-name "Groceries"
+;;  :items ["Grapes"
+;;          "Fuel"]}
+
+(defn- make-input-dialog [message default]
+  (let [dialog (goog/ui.Dialog.)
+        input (goog/ui.LabelInput. "Pick up milk")]
+    (.setTitle dialog message)
+    (.addChild dialog input true)
+    (.setVisible dialog true)
+
+    (set! (.-size (.getElement input)) 50)
+    (when default
+      (.setValue input default))
+    (.focusAndSelect input)
+
+    (ge/listenOnce dialog (.-SELECT goog/ui.Dialog.EventType)
+               #(when (= (.-key %) (.-OK goog/ui.Dialog.DefaultButtonKeys))
+                  (events/fire [:value-produced dialog] (.getValue input))))
+    
+    dialog))
+
+(defn- with-value [view callback]
+  (events/register-once [:value-produced view] callback))
+
+(defn- with-web-dialog-input [message default callback]
+  (let [dialog (make-input-dialog message default)]
+    (with-value dialog callback)))
+
+(defrecord WebTodoView [list state]
   ViewOperations
-
-  (set-items [view items]
+  (set-state [view new-state]
     (clear-list-view (:list view))
-    (extend-list-items (:list view) items))
+    (set-list-name (:list view) (:list-name new-state))
+    (extend-list-items (:list view) (:items new-state))
+    (when (:selected new-state)
+      (set-selected-index (:list view) (:selected new-state))))
 
-  (append-item [view item]
-    (append-list-item (:list view) item))
-
-  (clear-items [view]
-    (clear-list-view (:list view)))
-  
-  (set-name [view name]
-    (.setHtml (:list view) (render name))))
+  (with-dialog-input [view message default callback]
+    (with-web-dialog-input message default callback)))
 
 (defn make-web-view [el]
   (let [list (make-list-view "[]")
         create-button (goog/ui.Button. "Create")
         clear-button (goog/ui.Button. "Clear")
-        view (WebTodoView. list create-button)]
-    (ge/listen create-button "action" #(events/fire [:create-clicked view]))
-    (ge/listen clear-button "action" #(events/fire [:clear-clicked view]))
-    
+        view (WebTodoView. list)]
+
     (.render list el)
     (.render create-button el)
     (.render clear-button el)
 
+    (ge/listen create-button "action" #(events/fire [:create view]))
+    (ge/listen clear-button "action" #(events/fire [:clear view]))
+    (ge/listen (.getElement list) (.-DBLCLICK goog/events.EventType)
+               #(events/fire [:edit view] (get-selected-index list)))
+    (ge/listen (.getElement list) (.-CLICK goog/events.EventType)
+               #(events/fire [:select view] (get-selected-index list)))
+    
     view))
 
-(defn make-noop-view []
+(defn make-noop-view [test-input]
   (reify ViewOperations
-    (set-items [view items] true)
-    (append-item [view item] true)
-    (clear-items [view] true)
-    (set-name [view name] true)))
+    (set-state [view state] nil)
+
+    (with-dialog-input [view message default callback]
+      (callback test-input))))
 
 
-(defn make-input-dialog [message]
-  (let [dialog (goog/ui.Dialog.)
-        input (goog/ui.LabelInput. "type here")]
-    (.setTitle dialog message)
-    (.addChild dialog input true)
-    (.setVisible dialog true)
-    (.focusAndSelect input)
-    
-    (ge/listenOnce dialog (.-SELECT goog/ui.Dialog.EventType)
-               #(when (= (.-key %) (.-OK goog/ui.Dialog.DefaultButtonKeys))
-                  (events/fire [:ok-clicked dialog] (.getValue input))))
-    
-    dialog))
-
-(defn with-input [view callback]
-  (events/register-once [:ok-clicked view] callback))

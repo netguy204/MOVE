@@ -1,7 +1,7 @@
 (defproject cljs-base "1.0.0-SNAPSHOT"
   :description "FIXME: write description"
   :dependencies [[org.clojure/clojure "1.4.0"]]
-  :dev-dependencies [[lein-cljsbuild "0.1.8"]]
+  :dev-dependencies [[lein-cljsbuild "0.2.4"]]
 
   :cljsbuild
   {

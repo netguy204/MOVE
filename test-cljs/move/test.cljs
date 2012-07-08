@@ -11,19 +11,24 @@
 (defn test-interactors []
   (with-test-group "interactors"
     [state (models/make-web-state)
-     view (views/make-noop-view)
+     list (models/make-list state "test")
+     _ (models/set-current-list state list)
+     test-input "test input"
+     view (views/make-noop-view test-input)
      todo (inter/create-new-todo state view identity)]
     
     (assert-true (not (nil? todo)))
+    (assert-true (= test-input (value todo)))
     (assert-true (= 1 (models/count-lists state)))
-    (assert-true (= 1 (models/count-items state "default")))))
+    (assert-true (= 1 (models/count-items state list)))))
 
 (defn test-web-view []
   (with-test-group "webview"
     [content (dom/getElement "content")
      view (views/make-web-view content)
-     _ (views/set-items view ["one" "two" "three"])
-     _ (views/set-name view "sizzle")]
+     _ (views/set-state view {:selected 1
+                              :list-name "sizzle"
+                              :items ["one" "two" "three"]})]
     
     (assert-true (= 3 (count (.getChildren (:list view)))))
     (assert-true (= "sizzle" (.getText (:list view))))))
