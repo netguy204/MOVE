@@ -60,7 +60,7 @@
  (handleKeyEvent
   [e]
   (this-as this
-    (goog/base this "handleKeyEvent" e)
+    (goog/base (js* "this") "handleKeyEvent" e)
     (let [view (.-hiddenView this)]
       (when (#{(.-ENTER goog/events.KeyCodes)
                (.-MAC_ENTER goog/events.KeyCodes)} (.-keyCode e))
