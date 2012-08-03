@@ -2,24 +2,14 @@
   (:require [move.models :as models]
             [move.views :as views]
             [move.events :as events]
-            [goog.net.XhrIo :as xhr]
-            [goog.json :as json])
+            [move.async :as async]
+            [goog.net.XhrIo :as xhr])
   
   (:use-macros [move.macros :only [defasync]]))
 
-(defn- ev->str [ev]
-  "convert a xhr event object into the text it contains"
-  (.getResponseText (.-target ev)))
-
-(defasync get-json [url]
-  "[async] retrieve the data at url"
-  [event [xhr/send url]]
-
-  (json/unsafeParse (ev->str event)))
-
 (defasync sync-current-list [state]
   "[async] get the current list from the server and update the model"
-  [current-list [get-json "/resources/current-list.json"]
+  [current-list [async/get-json "/resources/current-list.json"]
    list (models/make-list state current-list)]
   
   (models/set-current-list state list)
@@ -27,7 +17,7 @@
 
 (defasync sync-list-data [state list]
   "[async] get the items in a list from the server and update the model"
-  [list-items [get-json "/resources/list-items.json"]]
+  [list-items [async/get-json "/resources/list-items.json"]]
 
   (doall (map #(models/add-todo state list % nil) list-items)))
 
